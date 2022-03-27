@@ -136,7 +136,7 @@ GROUP BY cls.title
 HAVING COUNT(chr.player_id) > 3;
 
 /*24.Выбрать название оружия количество, ник игрока, количество персонажей с данным оружием у игрока.*/
-SELECT wpn.title 'название оружия', COUNT(wpn.id) 'количество', plr.nickname, COUNT(chr.id) AS 'количество персонажей с данным оружием у игрока'
+SELECT wpn.title 'название оружия', COUNT(wpn.id) 'количество', plr.nickname, COUNT(chr.id) 'количество персонажей с данным оружием у игрока'
 FROM characters chr
 	JOIN players plr ON (chr.player_id = plr.id)
 	JOIN character_weapon chr_wpn ON (chr_wpn.character_id = chr.id)
@@ -144,7 +144,7 @@ FROM characters chr
 GROUP BY wpn.title, plr.nickname;
 
 /*25.Для каждого игрока выбрать количество персонажей для каждого класса. Результат отсортировать по нику игроков в лексикографическом порядке.*/  
-SELECT plr.nickname, COUNT(chr.id) AS 'количество персонажей для каждого класса'
+SELECT plr.nickname, COUNT(chr.id) 'количество персонажей для каждого класса'
 FROM characters chr
 	JOIN players plr ON (chr.player_id = plr.id)
 	JOIN classes cls ON (chr.class_id = cls.id)

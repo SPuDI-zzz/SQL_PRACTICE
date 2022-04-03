@@ -112,14 +112,14 @@ WHERE cls.title = 'zzz';
 SELECT cls.title, COUNT(chr.id)
 FROM characters chr
 	JOIN classes cls ON (chr.class_id = cls.id)
-GROUP BY cls.title
+GROUP BY cls.id, cls.title
 ORDER BY 2;
 
 /*21.Для каждого класса вывести количество персонажей с короткими именами (менее 5 букв). Результат отсортировать по названию в лексикографическом порядке.*/
 SELECT COUNT(chr.id) 'количество персонажей'
 FROM characters chr
 	JOIN classes cls ON (chr.class_id = cls.id)
-GROUP BY cls.title
+GROUP BY cls.id, cls.title
 HAVING LEN(cls.title) < 5
 ORDER BY cls.title;
 
@@ -132,7 +132,7 @@ SELECT cls.title
 FROM characters chr
 	JOIN classes cls ON chr.class_id = cls.id
 	JOIN players plr ON chr.player_id = plr.id
-GROUP BY cls.title
+GROUP BY cls.id, cls.title
 HAVING COUNT(chr.player_id) > 3;
 
 /*24.Выбрать название оружия количество, ник игрока, количество персонажей с данным оружием у игрока.*/
@@ -141,13 +141,131 @@ FROM characters chr
 	JOIN players plr ON (chr.player_id = plr.id)
 	JOIN character_weapon chr_wpn ON (chr_wpn.character_id = chr.id)
 	JOIN weapons wpn ON (chr_wpn.weapon_id = wpn.id)
-GROUP BY wpn.title, plr.nickname;
+GROUP BY wpn.id, wpn.title, plr.id plr.nickname;
 
 /*25.Для каждого игрока выбрать количество персонажей для каждого класса. Результат отсортировать по нику игроков в лексикографическом порядке.*/  
 SELECT plr.nickname, COUNT(chr.id) 'количество персонажей для каждого класса'
 FROM characters chr
 	JOIN players plr ON (chr.player_id = plr.id)
 	JOIN classes cls ON (chr.class_id = cls.id)
-GROUP BY plr.nickname, chr.class_id
+GROUP BY plr.id, plr.nickname, chr.class_id
 ORDER BY plr.nickname;
 
+/*26.Выбрать все данные рожденных зимой игроков, у которых персонажи двух или трех классов.*/
+SELECT plr.*
+FROM players plr
+	JOIN characters chr ON plr.id = chr.player_id
+	JOIN classes cls ON cls.id = chr.class_id
+WHERE MONTH(plr.birthday) IN (12, 1, 2)
+GROUP BY plr.id, plr.birthday, plr.card, plr.login, plr.mail, plr.nickname, plr.password, plr.phone, plr.rat_group
+HAVING COUNT(chr.class_id) IN (2, 3);
+
+/*27.Для каждого класса персонажей вывести количество персонажей с id более какого-то конкретного значения (значение придумайте сами).
+В результат включить только те классы оружия, в которых более двух различных персонажей.*/
+SELECT COUNT(chr.class_id) 'количество персонажей с id более какого-то конкретного значения'
+FROM classes cls
+	JOIN characters chr ON cls.id = chr.class_id
+	--JOIN character_weapon chr_wpn ON chr.id = chr_wpn.character_id
+	--JOIN weapons wpn ON wpn.id = chr_wpn.weapon_id
+WHERE chr.id > 2
+GROUP BY cls.id
+HAVING COUNT(chr.player_id) > 2;
+
+/*28.Выбрать ник и логин игроков, имя персонажа, максимальную и минимальную степень заряда оружия с дальнобойностью больше N (значение подставьте сами).
+Учитывать только персонажей, у которых два различных оружия и более. Результат отсортировать по логину в порядке обратном лексикографическому.*/
+SELECT plr.nickname, plr.login, chr.name, MAX(chr_wpn.weapon_streangth) 'максимальную степень заряда оружия', MIN(chr_wpn.weapon_streangth) 'минимальную степень заряда оружия'
+FROM players plr
+	JOIN characters chr ON plr.id = chr.player_id
+	JOIN character_weapon chr_wpn ON chr.id = chr_wpn.character_id
+	JOIN weapons wpn ON wpn.id = chr_wpn.weapon_id
+WHERE wpn.attack_range > 100
+GROUP BY plr.id, plr.nickname, plr.login, chr.id, chr.name
+HAVING COUNT(chr_wpn.weapon_id) >= 2
+ORDER BY 2 DESC;
+
+/*29.Для каждого года вывести количество рожденных в этот год игроков по временам года.
+В выборке должно быть шесть столбцов: год, четыре столбца с названием времен года, количество рожденных за год. Результат отсортировать по году.*/
+SELECT YEAR(birthday) 'Год рождения', COUNT(CASE WHEN MONTH(birthday) IN (12, 1, 2)THEN 1 ELSE NUll END) 'Зима', 
+									  COUNT(CASE WHEN MONTH(birthday) IN (3, 4, 5)THEN 1 ELSE NUll END) 'Весна',
+									  COUNT(CASE WHEN MONTH(birthday) IN (6, 7, 8)THEN 1 ELSE NUll END) 'Лето',
+									  COUNT(CASE WHEN MONTH(birthday) IN (9, 10, 11)THEN 1 ELSE NUll END) 'Осень',
+									  COUNT(YEAR(birthday)) 'Количество рожденных за год'
+FROM players
+GROUP BY YEAR(birthday)
+ORDER BY 1;
+
+/*30.Выбрать ник, логин игрока, количество персонажей у игрока. В результат включить только игроков, у которых все персонажи одного класса.
+Результат отсортировать по убыванию количества персонажей и по возрастанию id_игрока.*/
+SELECT plr.nickname, plr.login, COUNT(chr.id) 'количество персонажей у игрока'
+FROM players plr
+	JOIN characters chr ON plr.id = chr.player_id
+	JOIN classes cls ON cls.id = chr.class_id
+GROUP BY plr.id, plr.nickname, plr.login
+HAVING MAX(class_id) = MIN(class_id)
+ORDER BY 3 DESC, plr.id;
+
+/*31.Выбрать все имена персонажей, и если персонаж есть у игрока, то ник игрока. Учесть, что могут быть персонажи без игроков.*/
+SELECT chr.name, plr.nickname
+FROM characters chr
+	LEFT JOIN players plr ON plr.id = chr.player_id;
+
+/*32.Выбрать названия всех классов, и если есть персонажи соответствующего класса, то имя персонажа и ник игроков, у которых есть этот персонаж.
+Результат отсортировать по названию класса.*/
+SELECT cls.title, chr.name, plr.nickname
+FROM classes cls 
+	LEFT JOIN characters chr ON cls.id = chr.class_id AND chr.player_id IS NOT NULL	
+	LEFT JOIN players plr ON plr.id = chr.player_id
+ORDER BY 1;
+
+/*33.Выбрать для каждого игрока названия всех классов персонажей. Результат отсортировать по названию класса и по нику в лексикографическом порядке.*/
+SELECT plr.id, plr.nickname, cls.title
+FROM players plr
+	LEFT JOIN characters chr ON plr.id = chr.player_id
+	LEFT JOIN classes cls ON cls.id = chr.class_id
+ORDER BY 3, 2;
+
+/*34.Выбрать для каждого игрока названия всех классов персонажей. Если у игрока есть персонаж соответствующего класса в последнем столбце результирующей таблицы поставить +.
+Результат отсортировать по названию класса и по нику в лексикографическом порядке.*/
+SELECT plr.id, plr.nickname, cls.title, CASE WHEN chr.class_id IS NULL THEN '' ELSE '+' END 'есть ли персонаж соответствующего класса'
+FROM players plr
+	LEFT JOIN characters chr ON plr.id = chr.player_id
+	LEFT JOIN classes cls ON cls.id = chr.class_id
+ORDER BY 3, 2;
+
+/*35.Выбрать название всех классов персонажей и количество персонажей. Учесть, что в базе может не быть персонажей кого-либо класс.*/
+SELECT cls.title, COUNT(chr.id) 'количество персонажей'
+FROM classes cls
+	LEFT JOIN characters chr ON cls.id = chr.class_id
+GROUP BY cls.id, cls.title;
+
+/*36.Найти пары игроков, у которых совпадает пароль.*/
+SELECT plr.id, plr.nickname, p.id, p.nickname
+FROM players plr
+	JOIN players p ON plr.password = p.password
+WHERE plr.id > p.id;
+
+/*37.Вывести пары персонажей из одного клана, чьи имена начинаются на одну букву. Результат отсортировать по названию класса и по имени в лексикографическом порядке.*/
+SELECT chr.id, chr.name, c.id, c.name
+FROM characters chr 
+	JOIN characters c ON chr.clan = c.clan
+WHERE chr.id > c.id AND LEFT(chr.name,1) = LEFT(c.name,1); 
+
+/*38.Выбрать трех самых младших игроков.*/
+SELECT id, nickname, birthday
+FROM players plr
+WHERE 2 >= (SELECT COUNT(*)
+			FROM players p
+			WHERE p.birthday > plr.birthday);
+
+/*39.Вывести сообщение ‘Два игрока указали один email’, если есть такая пара игроков, у которой один и тот же email. И вывести вcе email уникальны в противном случае.*/
+SELECT CASE WHEN COUNT(*) > 0 THEN 'Два игрока указали один email' ELSE 'вcе email уникальны' END 'email'
+FROM players plr
+	JOIN players p ON plr.mail = p.mail
+WHERE plr.id > p.id;
+
+/*40.Выбрать все данные о самом молодом игроке.*/
+SELECT *
+FROM players plr
+WHERE 0 = (SELECT COUNT(*)
+			FROM players p
+			WHERE p.birthday > plr.birthday);

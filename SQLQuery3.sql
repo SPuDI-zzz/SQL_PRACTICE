@@ -220,16 +220,15 @@ ORDER BY 1;
 /*33.Выбрать для каждого игрока названия всех классов персонажей. Результат отсортировать по названию класса и по нику в лексикографическом порядке.*/
 SELECT plr.id, plr.nickname, cls.title
 FROM players plr
-	LEFT JOIN characters chr ON plr.id = chr.player_id
-	LEFT JOIN classes cls ON cls.id = chr.class_id
+	CROSS JOIN classes cls 
 ORDER BY 3, 2;
 
 /*34.Выбрать для каждого игрока названия всех классов персонажей. Если у игрока есть персонаж соответствующего класса в последнем столбце результирующей таблицы поставить +.
 Результат отсортировать по названию класса и по нику в лексикографическом порядке.*/
-SELECT plr.id, plr.nickname, cls.title, CASE WHEN chr.class_id IS NULL THEN '' ELSE '+' END 'есть ли персонаж соответствующего класса'
+SELECT DISTINCT plr.id, plr.nickname, cls.title, CASE WHEN chr.class_id IS NULL THEN '' ELSE '+' END 'есть ли персонаж соответствующего класса'
 FROM players plr
-	LEFT JOIN characters chr ON plr.id = chr.player_id
-	LEFT JOIN classes cls ON cls.id = chr.class_id
+	CROSS JOIN classes cls
+	LEFT JOIN characters chr ON cls.id = chr.class_id AND chr.player_id = plr.id
 ORDER BY 3, 2;
 
 /*35.Выбрать название всех классов персонажей и количество персонажей. Учесть, что в базе может не быть персонажей кого-либо класс.*/
@@ -251,11 +250,9 @@ FROM characters chr
 WHERE chr.id > c.id AND LEFT(chr.name,1) = LEFT(c.name,1); 
 
 /*38.Выбрать трех самых младших игроков.*/
-SELECT id, nickname, birthday
+SELECT TOP 3 id, nickname, birthday
 FROM players plr
-WHERE 2 >= (SELECT COUNT(*)
-			FROM players p
-			WHERE p.birthday > plr.birthday);
+ORDER BY birthday DESC;
 
 /*39.Вывести сообщение ‘Два игрока указали один email’, если есть такая пара игроков, у которой один и тот же email. И вывести вcе email уникальны в противном случае.*/
 SELECT CASE WHEN COUNT(*) > 0 THEN 'Два игрока указали один email' ELSE 'вcе email уникальны' END 'email'

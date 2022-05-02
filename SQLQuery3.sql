@@ -93,7 +93,8 @@ WHERE login = mail;
 SELECT cls.title, chr.name, cls.description
 FROM characters chr JOIN classes cls ON chr.class_id = cls.id
 
-/*18.Выбрать ник игрока, название класса, имя персонажа, характеристики, название оружия и степень заряда. Результат отсортировать по нику в порядке обратном лексикографическому, по имени персонажа в лексикографическом порядке.*/
+/*18.Выбрать ник игрока, название класса, имя персонажа, характеристики, название оружия и степень заряда.
+Результат отсортировать по нику в порядке обратном лексикографическому, по имени персонажа в лексикографическом порядке.*/
 SELECT plr.nickname, cls.title, chr.name, chr.stamina, chr.strength, chr.agility, chr.intellect, chr_wpn.weapon_streangth
 FROM characters chr 
 	JOIN players plr ON (chr.player_id = plr.id) 
@@ -123,8 +124,10 @@ GROUP BY cls.id, cls.title
 HAVING LEN(cls.title) < 5
 ORDER BY cls.title;
 
-/*22.Выбрать все даты из таблицы игроки. В первом столбце вывести дату в формате: название дня недели число название месяца четыре цифры года, а во втором столбце для суббот и воскресений – “выходной”, а для остальных дней “рабочий день”.*/
-SELECT DATENAME(DW,birthday) + ' ' + DATENAME(DD,birthday) + ' ' + DATENAME(MM,birthday) + ' ' + DATENAME(YYYY, birthday) 'Дата', CASE WHEN DATEPART(DW,birthday) > 5 THEN 'выходной' ELSE 'рабочий день' END 'a' 
+/*22.Выбрать все даты из таблицы игроки. В первом столбце вывести дату в формате: название дня недели число название месяца четыре цифры года,
+а во втором столбце для суббот и воскресений – “выходной”, а для остальных дней “рабочий день”.*/
+SELECT DATENAME(DW,birthday) + ' ' + DATENAME(DD,birthday) + ' ' + DATENAME(MM,birthday) + ' ' + DATENAME(YYYY, birthday) 'Дата',
+	CASE WHEN DATEPART(DW,birthday) > 5 THEN 'выходной' ELSE 'рабочий день' END 'a' 
 FROM players
 
 /*23.Выбрать названия классов, в которых более трех игроков.*/

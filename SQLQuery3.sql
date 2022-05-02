@@ -270,81 +270,160 @@ WHERE 0 = (SELECT COUNT(*)
 /*41.¬ыбрать все данные о самом молодом и о самом старшем игроке.*/
 SELECT *
 FROM players
-WHERE birthday IN (SELECT MIN(birthday)
-				   FROM players
-				   UNION ALL
-				   SELECT MAX(birthday)
-				   FROM players)
+WHERE birthday IN (
+	SELECT MIN(birthday)
+	FROM players
+	UNION ALL
+	SELECT MAX(birthday)
+	FROM players
+);
 
 /*42.¬ыбрать названи€ классов, в которых нет игроков.*/
 SELECT title
 FROM classes
-WHERE id NOT IN (SELECT DISTINCT ISNULL(class_id,0)
-				 FROM characters
-				 WHERE player_id IS NOT NULL);
+WHERE id NOT IN (
+	SELECT DISTINCT ISNULL(class_id,0)
+	FROM characters
+	WHERE player_id IS NOT NULL
+);
 
 /*43.¬ыбрать ник и логин игрока, который обладает всеми видами оружи€.*/
+/*WITH count_weapons (nickname, login, countWeapons) AS (
+	SELECT plr.nickname, plr.login, COUNT(DISTINCT chr_wpn.weapon_id) 
+	FROM characters chr
+	JOIN players plr 
+		ON plr.id = chr.player_id
+	JOIN character_weapon chr_wpn 
+		ON chr.id = chr_wpn.character_id
+	GROUP BY plr.id, plr.nickname, plr.login
+)
+SELECT cnt_wpn.nickname, cnt_wpn.login
+FROM count_weapons cnt_wpn
+WHERE cnt_wpn.countWeapons = (
+	SELECT COUNT(*)
+	FROM weapons
+);*/
+
 SELECT plr.nickname, plr.login
-FROM players plr
-	JOIN characters chr ON plr.id = chr.player_id
-	JOIN character_weapon chr_wpn ON chr.id = chr_wpn.character_id
-	JOIN weapons wpn ON wpn.id = chr_wpn.weapon_id
+FROM characters chr
+JOIN players plr 
+	ON plr.id = chr.player_id
+JOIN character_weapon chr_wpn 
+	ON chr.id = chr_wpn.character_id
 GROUP BY plr.id, plr.nickname, plr.login
-HAVING COUNT(wpn.id) > 0
-
-SELECT COUNT(id)
-FROM weapons
-
-SELECT character_id, COUNT(DISTINCT weapon_id)
-FROM character_weapon
-GROUP BY character_id
-
-SELECT plr.nickname, plr.login
-FROM players plr
-WHERE plr.id IN (SELECT chr.player_id
-				 FROM characters chr
-				 WHERE chr.id IN (SELECT chr_wpn.character_id
-								  FROM character_weapon chr_wpn
-								  GROUP BY chr_wpn.character_id
-								  HAVING SUM(SELECT COUNT(DISTINCT weapon_id)
-								  FROM character_weapon
-								  WHERE 
-								  GROUP BY character_id)
-								  COUNT(DISTINCT chr_wpn.weapon_id)) = (SELECT COUNT(*)
-																			  FROM weapons wpn)))
-
-SELECT plr.nickname, plr.login
-FROM players plr
-GROUP BY plr.id, plr.nickname, plr.login
-HAVING SUM() = (SELECT COUNT(*) FROM weapons)
+HAVING COUNT(DISTINCT chr_wpn.weapon_id) = (
+	SELECT COUNT(*)
+	FROM weapons
+);
 
 /*44.¬ыбрать дл€ каждого класса персонажа, имеющего минимальную степень зар€да оружи€ среди всех персонажей этого класса.*/
+WITH char_with_min_weapon_strth AS (
+	SELECT DISTINCT chr.id, chr.class_id
+	FROM characters chr
+
+	 JOIN character_weapon chr_wpn
+		ON chr.id = chr_wpn.character_id
+	WHERE chr_wpn.weapon_streangth = (
+		SELECT MIN(cw.weapon_streangth)
+		FROM characters c
+		JOIN character_weapon cw
+			ON c.id = cw.character_id
+		WHERE chr.class_id = c.class_id
+	)
+)
+SELECT cls.id, chr.id
+FROM classes cls
+LEFT JOIN char_with_min_weapon_strth chr
+	ON cls.id = chr.class_id;
+
+/*SELECT cls.id, chr.id
+FROM classes cls
+LEFT JOIN (
+	SELECT DISTINCT chr.id, chr.class_id
+	FROM characters chr
+
+	 JOIN character_weapon chr_wpn
+		ON chr.id = chr_wpn.character_id
+	WHERE chr_wpn.weapon_streangth = (
+		SELECT MIN(cw.weapon_streangth)
+		FROM characters c
+		JOIN character_weapon cw
+			ON c.id = cw.character_id
+		WHERE chr.class_id = c.class_id
+	)
+) chr
+	ON cls.id = chr.class_id;*/
 
 /*45.¬ыбрать игрока, у которого максимальное количество персонажей.*/
-SELECT id
-FROM players
-WHERE id IN (SELECT player_id
-FROM characters
-GROUP BY player_id)
-
-SELECT COUNT(id)
-FROM characters
-WHERE player_id IS NOT NULL
-GROUP BY player_id
-
-SELECT TOP 1 WITH TIES p.id
-FROM players p
-UNION
-SELECT c.player_id
-FROM characters c
-WHERE c.player_id IS NOT NULL
+SELECT plr.id
+FROM players plr
+JOIN characters chr
+	ON plr.id = chr.player_id
+GROUP BY plr.id
+HAVING COUNT(chr.id) = (
+	SELECT TOP 1 COUNT(*)
+	FROM characters chr
+	GROUP BY chr.player_id
+	ORDER BY 1 DESC
+);
 
 /*46.¬ыбрать название класса, в котором минимальное количество персонажей. ”честь, что может быть класс без персонажей.*/
+SELECT cls.title
+FROM classes cls
+LEFT JOIN characters chr
+	ON cls.id = chr.class_id
+GROUP BY cls.id, cls.title
+HAVING COUNT(chr.class_id) = (
+	SELECT TOP 1 COUNT(*)
+	FROM characters chr
+	GROUP BY chr.class_id
+	ORDER BY 1
+);
 
 /*47.¬ыбрать все данные игроков, у персонажей которых есть не все виды оружи€. ¬ результат должны войти игроки, у которых есть персонажи из всех классов.*/
+SELECT plr.*
+FROM players plr
+JOIN characters chr
+	ON plr.id = chr.player_id
+LEFT JOIN character_weapon chr_wpn
+	ON chr.id = chr_wpn.character_id
+GROUP BY plr.id, plr.birthday, plr.card, plr.login, plr.mail, plr.nickname, plr.password, plr.phone, plr.rat_group
+HAVING COUNT(DISTINCT chr_wpn.weapon_id) < (
+	SELECT COUNT(*)
+	FROM weapons
+) AND COUNT(DISTINCT chr.class_id) = (
+	SELECT COUNT (*)
+	FROM classes
+);
 
 /*48.¬ыбрать названи€ все описани€ из Ѕƒ. –езультат отсортировать в лексикографическом пор€дке.*/
+SELECT cls.description
+FROM classes cls
+UNION 
+SELECT chr.story
+FROM characters chr
+UNION 
+SELECT wpn.description
+FROM weapons wpn
+ORDER BY 1
+--€ не пон€л, что от мен€ хот€т)
 
 /*49.¬ыбрать все классы, в которых есть персонажи с одинаковым описанием.*/
+SELECT chr.class_id
+FROM characters chr
+JOIN characters c
+	ON c.story = chr.story AND c.id != chr.id
+GROUP BY chr.class_id
 
 /*50.¬ывести название оружи€, которое есть у наибольшего числа персонажей.*/
+SELECT wpn.title
+FROM weapons wpn
+JOIN character_weapon chr_wpn
+	ON wpn.id = chr_wpn.weapon_id
+GROUP BY wpn.id, wpn.title
+HAVING COUNT(DISTINCT chr_wpn.character_id) = (
+	SELECT TOP 1 COUNT(DISTINCT chr_wpn.character_id)
+	FROM character_weapon chr_wpn
+	GROUP BY chr_wpn.weapon_id
+	ORDER BY 1 DESC
+);

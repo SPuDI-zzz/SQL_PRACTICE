@@ -409,11 +409,11 @@ ORDER BY 1
 --я не понял, что от меня хотят)
 
 /*49.Выбрать все классы, в которых есть персонажи с одинаковым описанием.*/
-SELECT chr.class_id
+SELECT DISTINCT chr.class_id
 FROM characters chr
 JOIN characters c
-	ON c.story = chr.story AND c.id != chr.id
-GROUP BY chr.class_id
+	ON c.story = chr.story
+WHERE c.id != chr.id AND chr.class_id = c.class_id
 
 /*50.Вывести название оружия, которое есть у наибольшего числа персонажей.*/
 SELECT wpn.title

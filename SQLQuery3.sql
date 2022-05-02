@@ -176,7 +176,8 @@ HAVING COUNT(chr.player_id) > 2;
 
 /*28.Выбрать ник и логин игроков, имя персонажа, максимальную и минимальную степень заряда оружия с дальнобойностью больше N (значение подставьте сами).
 Учитывать только персонажей, у которых два различных оружия и более. Результат отсортировать по логину в порядке обратном лексикографическому.*/
-SELECT plr.nickname, plr.login, chr.name, MAX(chr_wpn.weapon_streangth) 'максимальную степень заряда оружия', MIN(chr_wpn.weapon_streangth) 'минимальную степень заряда оружия'
+SELECT plr.nickname, plr.login, chr.name, MAX(chr_wpn.weapon_streangth) 'максимальную степень заряда оружия',
+	MIN(chr_wpn.weapon_streangth) 'минимальную степень заряда оружия'
 FROM players plr
 	JOIN characters chr ON plr.id = chr.player_id
 	JOIN character_weapon chr_wpn ON chr.id = chr_wpn.character_id
